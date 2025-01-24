@@ -1,4 +1,4 @@
-<img src="logo.png" width="80"/>
+<img src="logo.png" width="100"/>
 
 # NixOS Disk Destroyer
 
