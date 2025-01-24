@@ -25,8 +25,7 @@ jobs:
     - name: Prepare Release Files
       run: |
         mkdir -p release
-        # Find files in the Nix build output symlink
-        cp result/netboot/netboot.ipxe" release/netboot.ipxe
+        cp result/netboot/netboot.ipxe release/netboot.ipxe :\
         cp "$(readlink -f result/netboot)/bzImage" release/bzImage
         cp "$(readlink -f result/netboot)/initrd" release/initrd.img
         cd release
