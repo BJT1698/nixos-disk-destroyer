@@ -32,11 +32,13 @@ jobs:
         find result -name "netboot.ipxe" -exec cp {} release/netboot.ipxe \;
         cd release
         zip -r ../nixos-disk-destroyer.zip . -i *
-    
+   
     - name: Create Release
-      uses: softprops/action-gh-release@v1
-      with:
-        files: nixos-disk-destroyer.zip
-        tag_name: v${{ github.run_id }}-$(date +'%Y%m%d-%H%M')
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        TAG_NAME="v$(date +'%Y%m%d-%H%M')-${{ github.sha }}"
+        gh release create "$TAG_NAME" \
+          nixos-disk-destroyer.zip \
+          -t "Automated Build $TAG_NAME" \
+          -n "Automated netboot build from GitHub Actions"
