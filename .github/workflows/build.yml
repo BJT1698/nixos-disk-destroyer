@@ -29,7 +29,7 @@ jobs:
         find result -name "initrd" -exec cp {} release/initrd.img \;
         find result -name "netboot.ipxe" -exec cp {} release/netboot.ipxe \;
         cd release
-        zip -r ../nixos-disk-destroyer.zip *
+        zip -r ../nixos-disk-destroyer.zip . -i *
 
     - name: Create Release
       uses: softprops/action-gh-release@v1
