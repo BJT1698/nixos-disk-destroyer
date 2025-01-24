@@ -1,0 +1,40 @@
+name: Build NixOS Netboot and Release
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install Nix
+      uses: cachix/install-nix-action@v22
+      with:
+        nix_path: nixpkgs=channel:nixos-unstable
+
+    - name: Build Netboot
+      run: |
+        nix-build '<nixpkgs/nixos/release.nix>' \
+          -A netboot.x86_64-linux \
+          --arg configuration ./configuration.nix
+
+    - name: Prepare Release Files
+      run: |
+        mkdir -p release
+        find result/netboot -name "*.img" -exec cp {} release/initrd.img \;
+        find result/netboot -name "bzImage" -exec cp {} release/bzImage \;
+        find result/netboot -name "netboot.ipxe" -exec cp {} release/netboot.ipxe \;
+        cd release
+        zip -r ../nixos-disk-destroyer.zip *
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: nixos-disk-destroyer.zip
+        tag_name: v${{ github.sha }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
