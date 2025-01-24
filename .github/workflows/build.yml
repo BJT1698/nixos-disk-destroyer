@@ -4,6 +4,8 @@ on:
   push:
     branches: [ main ]
   workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *' 
 
 jobs:
   build:
@@ -30,11 +32,11 @@ jobs:
         find result -name "netboot.ipxe" -exec cp {} release/netboot.ipxe \;
         cd release
         zip -r ../nixos-disk-destroyer.zip . -i *
-
+    
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
         files: nixos-disk-destroyer.zip
-        tag_name: v${{ github.sha }}
+        tag_name: v${{ github.run_id }}-$(date +'%Y%m%d-%H%M')
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
