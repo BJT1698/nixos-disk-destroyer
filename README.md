@@ -1,4 +1,4 @@
-![](logo.png)
+<img src="logo.png" width="50"/>
 
 # NixOS Disk Destroyer
 
