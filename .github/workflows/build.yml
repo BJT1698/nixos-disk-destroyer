@@ -21,13 +21,13 @@ jobs:
         nix-build '<nixpkgs/nixos/release.nix>' \
         -A netboot.x86_64-linux \
         --arg configuration ./configuration.nix
-
+    
     - name: Prepare Release Files
       run: |
         mkdir -p release
-        cp result/netboot/netboot.ipxe release/netboot.ipxe :\
-        cp "$(readlink -f result/netboot)/bzImage" release/
-        cp "$(readlink -f result/netboot)/initrd" release/
+        find result -name "bzImage" -exec cp {} release/bzImage \;
+        find result -name "initrd" -exec cp {} release/initrd.img \;
+        find result -name "netboot.ipxe" -exec cp {} release/netboot.ipxe \;
         cd release
         zip -r ../nixos-disk-destroyer.zip *
 
