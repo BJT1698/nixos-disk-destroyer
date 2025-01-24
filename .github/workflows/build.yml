@@ -26,8 +26,8 @@ jobs:
       run: |
         mkdir -p release
         cp result/netboot/netboot.ipxe release/netboot.ipxe :\
-        cp "$(readlink -f result/netboot)/bzImage" release/bzImage
-        cp "$(readlink -f result/netboot)/initrd" release/initrd.img
+        cp "$(readlink -f result/netboot)/bzImage" release/
+        cp "$(readlink -f result/netboot)/initrd" release/
         cd release
         zip -r ../nixos-disk-destroyer.zip *
 
