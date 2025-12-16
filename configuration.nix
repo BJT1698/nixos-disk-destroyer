@@ -7,7 +7,6 @@
   # Network configuration for PXE boot
   networking = {
     hostName = "nixos-disk-destroyer";
-    useDHCP = true;
   };
 
   # Include any additional packages you need
