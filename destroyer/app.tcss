@@ -1,0 +1,180 @@
+/* MVS Disk Destroyer - colori ANSI (palette ridefinita da start.sh):
+   black=fondo  blue=accento  red=pericolo  green=ok  yellow=avviso  bright_black=testo secondario */
+
+Screen {
+    background: ansi_black;
+    color: ansi_bright_white;
+}
+
+#banner {
+    height: 3;
+    padding: 1 2;
+    background: ansi_blue;
+    color: ansi_bright_white;
+}
+
+Footer {
+    background: ansi_black;
+}
+
+/* ---- Dischi ---- */
+#disks {
+    height: 1fr;
+    overflow-x: hidden;
+    margin: 1 2 0 2;
+    border: solid ansi_bright_black;
+    background: ansi_black;
+}
+#disks > .datatable--header {
+    background: ansi_black;
+    color: ansi_bright_black;
+    text-style: bold;
+}
+#disks > .datatable--cursor {
+    background: ansi_blue;
+    color: ansi_bright_white;
+}
+#disks > .datatable--even-row {
+    background: ansi_black;
+}
+#hint {
+    height: 2;
+    padding: 1 3 0 3;
+}
+
+/* ---- Metodo ---- */
+#method-row {
+    height: 1fr;
+    margin: 1 2;
+}
+#methods {
+    width: 46;
+    border: solid ansi_bright_black;
+    background: ansi_black;
+}
+#methods:focus {
+    border: solid ansi_blue;
+}
+#method-info {
+    width: 1fr;
+    margin-left: 2;
+    padding: 1 2;
+    border: solid ansi_bright_black;
+}
+
+/* ---- Conferma ---- */
+#confirm-box {
+    margin: 1 4;
+    padding: 1 2;
+    border: solid ansi_red;
+    height: auto;
+}
+#warn {
+    color: ansi_bright_red;
+    margin-bottom: 1;
+}
+#confirm-disks, #confirm-method {
+    margin-bottom: 1;
+}
+#confirm-input {
+    width: 30;
+    margin: 1 0;
+    border: solid ansi_bright_black;
+}
+#confirm-input:focus {
+    border: solid ansi_red;
+}
+#confirm-buttons {
+    height: 3;
+    margin-top: 1;
+}
+#confirm-buttons Button {
+    margin-right: 2;
+}
+
+/* ---- Avanzamento ---- */
+#jobs {
+    height: 1fr;
+    margin: 1 2 0 2;
+}
+.job {
+    height: 4;
+    padding: 0 1;
+    margin-bottom: 0;
+    border: solid ansi_bright_black;
+}
+.job.ok {
+    border: solid ansi_green;
+}
+.job.err {
+    border: solid ansi_red;
+}
+.job-name {
+    width: 22;
+}
+.job-main {
+    width: 1fr;
+}
+.job-bar {
+    width: 1fr;
+}
+.job-stats {
+    width: 34;
+    text-align: right;
+}
+#log {
+    height: 6;
+    margin: 0 2;
+    padding: 0 1;
+    border: solid ansi_bright_black;
+    color: ansi_bright_black;
+}
+#summary {
+    height: auto;
+    padding: 1 3 0 3;
+}
+#end-buttons {
+    height: 3;
+    margin: 1 3;
+}
+#end-buttons Button {
+    margin-right: 2;
+}
+
+/* ---- Pulsanti e scorrimento: niente glifi a blocchi parziali (assenti nel font della console) ---- */
+Button {
+    border: solid ansi_bright_black;
+    background: ansi_black;
+    color: ansi_bright_white;
+    height: 3;
+    min-width: 14;
+}
+Button:focus {
+    border: solid ansi_blue;
+    text-style: bold;
+}
+Button.-error {
+    border: solid ansi_red;
+    color: ansi_bright_red;
+}
+Button.-error:focus {
+    border: solid ansi_red;
+}
+Button.-primary {
+    border: solid ansi_blue;
+}
+* {
+    scrollbar-size: 1 1;
+    scrollbar-color: ansi_blue;
+    scrollbar-background: ansi_black;
+}
+Input {
+    border: solid ansi_bright_black;
+}
+Checkbox, RadioButton {
+    background: ansi_black;
+    border: none;
+}
+Checkbox:focus, RadioButton:focus {
+    border: none;
+}

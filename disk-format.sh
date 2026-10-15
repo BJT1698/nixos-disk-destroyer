@@ -146,7 +146,7 @@ validate_disk_exists() {
 
 check_disk_mounted() {
     local disk=$1
-    if mount | grep -q "^/dev/${disk}"; then
+    if lsblk -nro MOUNTPOINTS "/dev/$disk" 2>/dev/null | grep -q .; then
         print_error "Device /dev/$disk or its partitions are currently mounted"
         print_info "Please unmount before proceeding"
         return 1
@@ -308,7 +308,7 @@ display_format_menu() {
     
     echo -e "${BOLD}${YELLOW}Traditional Methods:${NC}"
     echo -e "${BOLD}[2]${NC} Quick Format ${DIM}(Fastest, least secure)${NC}"
-    echo -e "    • Clears partition table and creates new filesystem"
+    echo -e "    • Clears signatures and creates an empty GPT partition table"
     echo -e "    • Data recovery possible with forensic tools"
     echo
     echo -e "${BOLD}[3]${NC} Deep Format ${DIM}(Moderate speed and security)${NC}"
@@ -375,11 +375,6 @@ quick_format() {
         return 1
     fi
     
-    print_info "Creating ext4 filesystem..."
-    mkfs.ext4 -F "/dev/$disk" &>/dev/null &
-    pid=$!
-    show_progress "$pid" "Creating filesystem"
-    wait "$pid"
 }
 
 deep_format() {
@@ -389,7 +384,8 @@ deep_format() {
     dd if=/dev/zero of="/dev/$disk" bs=4M status=none 2>/dev/null &
     local pid=$!
     show_progress "$pid" "Writing zeros"
-    wait "$pid"
+    wait "$pid" || true   # dd termina sempre con "No space left on device" alla fine del disco
+    sync
 }
 
 secure_format_shred() {
@@ -451,7 +447,8 @@ fast_secure_hdd() {
     dd if=/dev/urandom of="/dev/$disk" bs=4M status=none 2>/dev/null &
     local pid=$!
     show_progress "$pid" "Writing random data"
-    wait "$pid"
+    wait "$pid" || true   # dd termina sempre con "No space left on device" alla fine del disco
+    sync
     
     print_info "Creating GPT partition table..."
     if ! parted -s "/dev/$disk" mklabel gpt &>/dev/null; then

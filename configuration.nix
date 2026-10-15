@@ -1,5 +1,9 @@
 # configuration.nix
-{ config, pkgs, ... }:
+{ config, pkgs, lib, ... }:
+let
+  # Python con Textual per la TUI (destroyer/app.py)
+  python = pkgs.python3.withPackages (ps: [ ps.textual ]);
+in
 {
   # Basic system settings
   boot.supportedFilesystems = [ "btrfs" "reiserfs" "vfat" "f2fs" "xfs" "ntfs" "cifs" ];
@@ -9,20 +13,28 @@
     hostName = "nixos-disk-destroyer";
   };
 
-  # Include any additional packages you need
+  # Console: font grande e leggibile; la palette dei colori la imposta destroyer/start.sh
+  console = {
+    earlySetup = true;
+    font = "ter-v24b";
+    packages = [ pkgs.terminus_font ];
+  };
+
   environment.systemPackages = with pkgs; [
+    python
     bash
     coreutils
-    util-linux  # For lsblk and wipefs
-    kbd         # For terminal colors
-    parted      # For partition management
+    util-linux    # lsblk, wipefs, blkdiscard
+    kbd
+    parted
     e2fsprogs
-    scrub
+    nvme-cli      # NVMe sanitize / format
+    hdparm        # ATA Secure Erase
+    smartmontools
     beep
-    neofetch
   ];
 
-   # Enable PC speaker support
+  # Enable PC speaker support
   boot.extraModprobeConfig = ''
     options snd-pcsp index=2
   '';
@@ -31,11 +43,20 @@
   # System settings specific to netboot
   boot.initrd.availableKernelModules = [
     "ata_piix" "uhci_hcd" "virtio_pci" "virtio_scsi"
+    "ahci" "nvme" "sd_mod" "xhci_pci" "usb_storage" "uas"
   ];
-  
-  programs.bash.interactiveShellInit = "
-    sudo /etc/disk-format.sh
-  ";
+
+  # TUI sulla prima console (login automatico dell'immagine netboot). Le altre console restano
+  # libere per la manutenzione; "destroyer" la riapre.
+  programs.bash.interactiveShellInit = ''
+    alias destroyer='sudo /etc/disk-destroyer/start.sh'
+    if [ "$(tty)" = "/dev/tty1" ] && [ -z "''${DESTROYER_STARTED:-}" ]; then
+      export DESTROYER_STARTED=1
+      sudo /etc/disk-destroyer/start.sh
+      echo
+      echo "Digita 'destroyer' per riaprire l'interfaccia, 'sudo poweroff' per spegnere."
+    fi
+  '';
 
   # This is important for netboot
   boot.loader.grub.enable = false;
@@ -44,29 +65,12 @@
   # Don't keep logs in tmpfs
   services.journald.storage = "volatile";
 
-  # Create the script in the system
+  # TUI (Python/Textual): app, motore di cancellazione, stile e script di avvio
+  environment.etc."disk-destroyer".source = ./destroyer;
+
+  # Script testuale originale, usato come riserva se la TUI non parte
   environment.etc."disk-format.sh" = {
     mode = "0755";
-    text = builtins.readFile ./disk-format.sh;  # Assuming the script is in the same directory
-  };
-
-  # Optional: Create a systemd service to make it available as a system command
-  systemd.services.disk-format = {
-    description = "Disk Format Service";
-    path = with pkgs; [
-      bash
-      coreutils
-      util-linux
-      kbd
-      beep
-      parted
-      e2fsprogs
-      scrub
-    ];
-    serviceConfig = {
-      Type = "oneshot";
-      ExecStart = "/etc/disk-format.sh";
-      RemainAfterExit = "yes";
-    };
+    text = builtins.readFile ./disk-format.sh;
   };
 }
