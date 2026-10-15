@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import os
 import random
+import re
 import subprocess
 import threading
 import time
@@ -215,27 +216,28 @@ class Job:
         action = {"block": "2", "crypto": "4"}[kind]
         self.update(step=f"NVMe sanitize ({kind})", fraction=0.0)
         self._cmd(["nvme", "sanitize", self.disk.nvme_ctrl, f"--sanact={action}"])
-        t0 = time.time()
+        t0, bad, raw = time.time(), 0, ""
         while True:
             time.sleep(2)
-            r = run(["nvme", "sanitize-log", self.disk.nvme_ctrl, "-o", "json"])
-            try:
-                log = json.loads(r.stdout)
-                log = next(iter(log.values())) if isinstance(log, dict) and "sprog" not in log else log
-                sprog, sstat = int(log.get("sprog", 0)), int(log.get("sstat", 0))
-            except (json.JSONDecodeError, StopIteration, AttributeError, ValueError):
-                sprog, sstat = 0, 2
-            state = sstat & 0x7
-            frac = sprog / 65535
             elapsed = time.time() - t0
+            r = run(["nvme", "sanitize-log", self.disk.nvme_ctrl, "-o", "json"])
+            raw = (r.stdout or r.stderr).strip()
+            parsed = parse_sanitize_log(raw)
+            if parsed is None:
+                bad += 1
+                if bad >= 30:
+                    raise WipeError(f"stato del sanitize non leggibile: {raw[:160]}")
+                continue
+            sprog, state = parsed
+            frac = sprog / 65535
             self.update(fraction=frac if state == 2 else 1.0,
                         eta=elapsed / frac - elapsed if 0.01 < frac < 1 else None)
-            if state == 1:
+            if state in (1, 4):          # completato (4 = senza deallocazione)
                 return
-            if state == 0 and elapsed > 30:
-                raise WipeError("sanitize non avviato dal disco")
             if state == 3:
                 raise WipeError("sanitize fallito (stato riportato dal disco)")
+            if state == 0 and elapsed > 30:
+                raise WipeError("sanitize non avviato dal disco")
             if elapsed > 12 * 3600:
                 raise WipeError("sanitize non completato entro 12 ore")
 
@@ -274,6 +276,35 @@ class Job:
         if r.returncode not in ok_codes:
             raise WipeError(f"{cmd[0]} ha restituito {r.returncode}: {(r.stderr or r.stdout).strip()[-200:]}")
         return r.stdout
+
+
+def parse_sanitize_log(text: str) -> tuple[int, int] | None:
+    """(sprog, stato SOS) da `nvme sanitize-log -o json`.
+
+    nvme-cli vecchi: {"nvme0": {"sprog": n, "sstat": <intero>}}; nvme-cli 2.x:
+    "sstat": {"status": "(N) descrizione", ...}. Stato: 0 mai, 1 ok, 2 in corso, 3 fallito, 4 ok senza dealloc.
+    """
+    try:
+        log = json.loads(text)
+    except json.JSONDecodeError:
+        return None
+    if isinstance(log, dict) and "sprog" not in log and len(log) == 1:
+        log = next(iter(log.values()))
+    if not isinstance(log, dict) or "sprog" not in log:
+        return None
+    try:
+        sprog = int(log["sprog"])
+        sstat = log.get("sstat", 0)
+        if isinstance(sstat, dict):
+            m = re.match(r"\s*\((\d+)\)", str(sstat.get("status", "")))
+            if not m:
+                return None
+            state = int(m.group(1))
+        else:
+            state = int(sstat) & 0x7
+    except (TypeError, ValueError):
+        return None
+    return sprog, state
 
 
 def fmt_time(sec: float | None) -> str:
